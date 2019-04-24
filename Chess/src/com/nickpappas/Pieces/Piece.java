@@ -97,7 +97,6 @@ public abstract class Piece {
         this.pieceCords = newCords;
     }
 
-
     public boolean checkOutBounds(Cordinates pieceCords, Cordinates desiredCords){
         if(desiredCords.getX() == pieceCords.getX() && desiredCords.getY() == pieceCords.getY()) return false;  // Dont include the move.
         if(desiredCords.getX() < 0 || desiredCords.getX() > 7 || desiredCords.getY() < 0 || desiredCords.getY() > 7) return false;

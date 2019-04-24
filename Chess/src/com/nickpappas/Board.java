@@ -5,47 +5,50 @@ package com.nickpappas;
 // (powered by Fernflower decompiler)
 //
 
+import com.nickpappas.Gui.MouseHandler;
 import com.nickpappas.Pieces.*;
 
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Scanner;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.*;
 
-import static javax.swing.SwingUtilities.isLeftMouseButton;
-import static javax.swing.SwingUtilities.isRightMouseButton;
 
-public class Board extends JFrame implements MouseListener, MouseMotionListener {
+public class Board extends JFrame{
 
+
+    // DATA STUFF //
     private final int ROWS = 8;
     private final int COLS = 8;
-    private JPanel pnl = new JPanel(new GridLayout(8, 8, 0, 0));
-    private JPanel[] pnl1 = new JPanel[64];
     private ArrayList<Tile> boardTiles = new ArrayList<>();
-    private boolean isWhite = false;
-    private final Color darkerClr = new Color(156, 112, 42, 196);   // Dark Color for board
-    private final Color lighterClr = new Color(224, 212, 164, 237); // Lighter Color for board
-    private final Color clrForHighlight = new Color(168, 184, 58, 237); // Color for highligting
     private final int[][] gameData= new int[8][8];
+    private boolean[][] bitmap = new boolean[8][8];
+    /////////////////////////////////////////////////////
+    // PIECES //
     private ArrayList<Rook> rook = new ArrayList<>();
     private ArrayList<Knight> knight = new ArrayList<>();
     private ArrayList<Bishop> bishop = new ArrayList<>();
     private ArrayList<Queen> queen = new ArrayList<>();
     private ArrayList<King> king = new ArrayList<>();
     private ArrayList<Pawn> pawn = new ArrayList<>();
-    private final ImageIcon boardIcon= new ImageIcon(this.getClass().getResource("Pieces/BoardResources/board.png"));
     private final ImageIcon emptyPieceIcon = new ImageIcon(this.getClass().getResource("Pieces/Resources/emptyPiece.png"));
+    /////////////////////////////////////////////////////
 
     // King stuff
     private Cordinates[] KINGS_CORDS = {new Cordinates(7, 4), new Cordinates(0,4)};
     private int[] KING_STATE = {0,0}; // 0 natural , 1 roua, 2 roua-mat
-
+    /////////////////////////////////////////////////////
 
     // Gui stuff
+    private JPanel pnl = new JPanel(new GridLayout(8, 8, 0, 0));
+    private JPanel[] pnl1 = new JPanel[64];
+    private final Color darkerClr = new Color(156, 112, 42, 196);   // Dark Color for board
+    private final Color lighterClr = new Color(224, 212, 164, 237); // Lighter Color for board
+    private final Color clrForHighlight = new Color(168, 184, 58, 237); // Color for highligting
+    /////////////////////////////////////////////////////
+    // Mouse clicks event helping vars
+    /////////////////////////////////////////////////////
     private JLabel movingLabel;
     private JPanel sourcePanel;
     private JPanel oldPanel;
@@ -53,7 +56,7 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
     private Color oldClr;
     private int tileClicked = -1;
     private int oldTileClicked = -1;
-
+    /////////////////////////////////////////////////////
 
     public Board() {
         /*
@@ -76,24 +79,15 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
         setTitle("Chess");
         setDefaultCloseOperation(3);
         createPieces();
-        //drawCheckBoard();
         createAndDrawTiles();
-        //this.KINGS_CORDS[0] = new Cordinates(7,4);
-        //this.KINGS_CORDS[1] = new Cordinates(0,4);
-        // this.moves = new Move(boardTiles);
         pack();
         add(pnl);
-    }
-
-
-    private ImageIcon resizePieceLabel(ImageIcon pieceIcon) {
-        ImageIcon pieceImg = new ImageIcon(pieceIcon.getImage().getScaledInstance(700, 700, 4));
-        return pieceImg;
     }
 
     private void createAndDrawTiles(){
         Color newColor;
         int count = 0;
+        // Color up the panels
         for(int i=0;i<(ROWS * COLS);i++){
             count++;
             if(count % 2 == 0 && i % ROWS == 0){
@@ -156,9 +150,27 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
                 getTile(j).setTilePosName(A+""+(counter));
             }
         }
+
+        // Making "Bitmap" for tracking pieces better.
+        ////////////////////////////////////////////////////////////////////////////////////
+        // Initialise the bitmaps
+        for(int i = 0;i < ROWS;i++) {
+            for (int j = 0; j < COLS; j++) {
+                bitmap[i][j] = false;
+            }
+        }
+        // Pieces
+        for(int i=0;i<8;i++){
+            bitmap[7][i] = true;
+            bitmap[6][i] = true;
+            bitmap[0][i] = true;
+            bitmap[1][i] = true;
+        }
+        ////////////////////////////////////////////////////////////////////////////////////
+
+
         // ADDING PIECES
         // FIRST THE BLACKS THEN THE WHITES
-
         ////////////////////////////////////////////////////////////////////////////////////
         // Adding Blacks
         int j = 8;
@@ -175,7 +187,6 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
         getTile(6).setPiece(this.knight.get(3));
         getTile(7).setPiece(this.rook.get(3));
 
-
         // Adding whites
         j = 0;
         for(int i = 48; i < 56; ++i) {
@@ -191,12 +202,76 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
         getTile(62).setPiece(this.knight.get(1));
         getTile(63).setPiece(this.rook.get(1));
         ////////////////////////////////////////////////////////////////////////////////////
-
         // Adding mouse listeners
         for(int i=0;i<(ROWS * COLS);i++){
-            getTile(i).getTilePanel().addMouseListener(new MouseHandler());
+            getTile(i).getTilePanel().addMouseListener(new MouseHandler(this));
+        }
+    }
+    // TODO MANY BUGS HERE STILL!!
+    //      KING STATE NEED REVISIT!!!!!
+    public void swapPieces(int oldTileClicked, int tileClicked){
+
+        // Krata to palio piece pou pathses
+        // Krata to piece pou 8a pas
+        Piece firstPiece  = getTile(oldTileClicked).getPiece();
+        Piece secondPiece = getTile(tileClicked).getPiece();
+
+        Cordinates tempCords = firstPiece.getPieceCords();   // Krata ta cords tou prwtou Piece
+        firstPiece.updatePiecePos(secondPiece.getPieceCords());  // ala3e ta cords tou prwtou Piece me tou deuterou.
+
+        // An to piece einai o basilias kane update to position
+        if(firstPiece.getPieceName().equals("White King")){
+            KINGS_CORDS[0] = firstPiece.getPieceCords();
+
+            // Unique cases aka Castling WHITE KING
+            if     (KINGS_CORDS[0].getX() == 7 && KINGS_CORDS[0].getY() == 2){
+                getTile(59).setPiece(getTile(56).getPiece());
+                getTile(59).getPiece().updatePiecePos(new Cordinates(7, 3));
+                getTile(56).setPiece(new EmptyPiece("empty"," _", new Cordinates(7, 0)));
+            }
+            else if(KINGS_CORDS[0].getX() == 7 && KINGS_CORDS[0].getY() == 6){
+                getTile(61).setPiece(getTile(63).getPiece());
+                getTile(61).getPiece().updatePiecePos(new Cordinates(7, 5));
+                getTile(63).setPiece(new EmptyPiece("empty"," _", new Cordinates(7, 7)));
+            }
+        }
+        else if(firstPiece.getPieceName().equals("Black King")){
+            KINGS_CORDS[1] = firstPiece.getPieceCords();
+
+            // Unique cases aka Castling BLACK KING
+            if     (KINGS_CORDS[1].getX() == 0 && KINGS_CORDS[1].getY() == 2){
+                getTile(3).setPiece(getTile(0).getPiece());
+                getTile(3).getPiece().updatePiecePos(new Cordinates(0, 3));
+                getTile(0).setPiece(new EmptyPiece("empty"," _", new Cordinates(0, 0)));
+            }
+            else if(KINGS_CORDS[1].getX() == 0 && KINGS_CORDS[1].getY() == 6){
+                getTile(5).setPiece(getTile(7).getPiece());
+                getTile(5).getPiece().updatePiecePos(new Cordinates(0, 5));
+                getTile(7).setPiece(new EmptyPiece("empty"," _", new Cordinates(0, 7)));
+            }
+        }
+        else{
+            // An den einai King to piece prepei na doume se ti
+            // state meta apo ka8e khnhsh brisketai o King mas.
+            // TODO MANY BUGS HERE STILL!!
+            if(firstPiece.getAlliance())
+                KING_STATE[0] = ((King)getTile(KINGS_CORDS[0]).getPiece()).updateKingState();
+            else
+                KING_STATE[1] = ((King)getTile(KINGS_CORDS[1]).getPiece()).updateKingState();
         }
 
+        updateBitmap(new Cordinates(oldTileClicked/8, oldTileClicked%8),
+                new Cordinates(tileClicked/8, tileClicked%8));
+        // Sto palio tile dimiourgise ena new EmptyPiece sthn palia 8esh tou prwtou Piece kai san cords dwstou ta Cords tou paliou
+        getTile(oldTileClicked).setPiece(new EmptyPiece("empty"," _", tempCords));
+        // Sto neo tile bale to Piece tou prwtou tile pou pathses
+        getTile(tileClicked).setPiece(firstPiece);
+
+    }
+
+    public void updateBitmap(Cordinates oldTile, Cordinates newTile){
+        bitmap[oldTile.getX()][oldTile.getY()] = false;
+        bitmap[newTile.getX()][newTile.getY()] = true;
     }
 
     public void updateBoardState(){
@@ -206,156 +281,25 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
 
         System.out.println("\n\n\tNEW GAME STATE");
         for(int i = 0; i < (ROWS * COLS);i++){
-           if(i % 8 == 0) System.out.println();
-           System.out.print(getTile(i).getPiece().getPieceSymbol()+" ");
+            if(i % 8 == 0) System.out.println();
+            System.out.print(getTile(i).getPiece().getPieceSymbol()+" ");
         }
         System.out.println("\n");
 
-    }
-
-    public class MouseHandler extends MouseAdapter {
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                sourcePanel =(JPanel)e.getComponent();
-
-                // keep track which panel got clicked
-                for(int i=0;i<(ROWS * COLS);i++) {
-                    if(getTile(i).getTilePanel().equals(sourcePanel)){
-
-                        //int y = boardTiles.get(i).getTileCords().getY();
-                        //int x = boardTiles.get(i).getTileCords().getX();
-                        //System.out.println("Panel Cords: ("+x+","+y+")");
-                        tileClicked = i;
-                        break;
-                    }
-                }
-
-                // Kanei to component JPanel gia na tre3ei thn .getComponent me (int index)
-                // Epeita to kanei cast se JLabel giati to .getComponent gurnaei profanws Component
-                if(isLeftMouseButton(e)){
-
-                    // Ama uparxei highlighted hdh kai pathsame pali sto idio panel tote
-                    // alla3e to xrwma sto palio xrwma kai kanei to highlight false.
-                    // Alliws an uparxei highlight alla to panel pou pathsame den einai to idio
-                    // tote mhn kaneis tpt/typwse sfalma
-                    // kai den yparxei highlight tote apla krata to palio xrwma kai alla3e xrwma
-                    // kai to highlight kanto true.
-
-                    if(isThereHighlight && sourcePanel == oldPanel) {
-                        sourcePanel.setBackground(oldClr);
-                        isThereHighlight = false;
-                    }else if(isThereHighlight && sourcePanel != oldPanel){
-                        System.out.println("Invalid click.");
-                    }else if(!isThereHighlight){
-
-                        // Save which panel was clicked
-                        for(int i=0;i<(ROWS * COLS);i++) {
-                            if(getTile(i).getTilePanel().equals(sourcePanel)){
-                                oldTileClicked = i;
-                                break;
-                            }
-                        }
-                        //PossibleMoves allMoves = new PossibleMoves(getBoard());
-                        //allMoves.getEnemyMoves(true);
-
-                        oldClr = sourcePanel.getBackground();
-                        sourcePanel.setBackground(clrForHighlight);
-                        oldPanel = sourcePanel;
-                        isThereHighlight = true;
-
-                        movingLabel = (JLabel)sourcePanel.getComponent(0);
-                        updateBoardState();
-
-                    }
-                }else if(isRightMouseButton(e)){
-
-                    if(isThereHighlight){
-                        // Kanei remove ola comps pou uparxoun sto panel
-                        // kai epeita pros8eth to moving label.
-
-                        ArrayList<Cordinates> validMoves = getTile(oldTileClicked)
-                                                                .getPiece()
-                                                                .getPieceValidMoves();
-
-                        int y = getTile(tileClicked).getTileCords().getY();
-                        int x = getTile(tileClicked).getTileCords().getX();
-                        System.out.println("\n\t\t\t\tCLICKED ("+x+","+y+")");
-                        System.out.println("VALID MOVES ");
-                        for(Cordinates cord : validMoves){
-                            System.out.println("("+cord.getX()+","+cord.getY()+")");
-                            if(cord.getY() == y && cord.getX() == x){
-
-                                 swapPieces(); // Ama DEN einai occupied to tile apla kanto swap
-                                 sourcePanel.removeAll();
-                                 sourcePanel.add(movingLabel);
-                                 oldPanel.setBackground(oldClr);
-                                 oldPanel.add(new JLabel(emptyPieceIcon));
-                                 isThereHighlight = false;
-                                 updateBoardState();
-                                 break;
-                            }
-                        }
-
-
-                    }
-
-                }
-
+        /*
+        SHOWING BITMAP
+        System.out.println("\tBITMAP");
+        for(int i = 0; i < ROWS;i++){
+            for(int j = 0;j < COLS;j++) {
+                System.out.print(bitmap[i][j]+" ");
             }
-
-    }
-
-    public void swapPieces(){
-
-
-        // Krata to palio piece pou pathses
-        // Krata to piece pou 8a pas
-        Piece firstPiece  = getTile(oldTileClicked).getPiece();
-
-        Piece secondPiece = getTile(tileClicked).getPiece();
-        Cordinates tempCords = firstPiece.getPieceCords();   // Krata ta cords tou prwtou Piece
-        firstPiece.updatePiecePos(secondPiece.getPieceCords());  // ala3e ta cords tou prwtou Piece me tou deuterou.
-
-        // An to piece einai o basilias kane update to position
-        if(firstPiece.getPieceName().equals("White King")){
-            KINGS_CORDS[0] = firstPiece.getPieceCords();
-
-            // Unique cases aka Castling
-            if(KINGS_CORDS[0].getX() == 7 && KINGS_CORDS[0].getY() == 2){
-                getTile(59).setPiece(getTile(56).getPiece());
-                getTile(59).getPiece().updatePiecePos(new Cordinates(7, 3));
-                getTile(56).setPiece(new EmptyPiece("empty"," _", new Cordinates(7, 0)));
-            }else if(KINGS_CORDS[0].getX() == 7 && KINGS_CORDS[0].getY() == 6){
-                getTile(61).setPiece(getTile(63).getPiece());
-                getTile(61).getPiece().updatePiecePos(new Cordinates(7, 5));
-                getTile(63).setPiece(new EmptyPiece("empty"," _", new Cordinates(7, 7)));
-            }
-        }else if(firstPiece.getPieceName().equals("Black King")){
-            KINGS_CORDS[1] = firstPiece.getPieceCords();
-
-            // Unique cases aka Castling
-            if(KINGS_CORDS[1].getX() == 0 && KINGS_CORDS[1].getY() == 2){
-                getTile(3).setPiece(getTile(0).getPiece());
-                getTile(3).getPiece().updatePiecePos(new Cordinates(0, 3));
-                getTile(0).setPiece(new EmptyPiece("empty"," _", new Cordinates(0, 0)));
-            }else if(KINGS_CORDS[1].getX() == 0 && KINGS_CORDS[1].getY() == 6){
-                getTile(5).setPiece(getTile(7).getPiece());
-                getTile(5).getPiece().updatePiecePos(new Cordinates(0, 5));
-                getTile(7).setPiece(new EmptyPiece("empty"," _", new Cordinates(0, 7)));
-            }
-        }else{
-            // An den einai King to piece prepei na doume se ti
-            // state meta apo ka8e khnhsh brisketai o King mas.
-            updateKingsStates(firstPiece.getAlliance());
+            System.out.println();
         }
 
-        // Sto palio tile dimiourgise ena new EmptyPiece sthn palia 8esh tou prwtou Piece kai san cords dwstou ta Cords tou paliou
-        getTile(oldTileClicked).setPiece(new EmptyPiece("empty"," _", tempCords));
-        // Sto neo tile bale to Piece tou prwtou tile pou pathses
-        getTile(tileClicked).setPiece(firstPiece);
-
+         */
     }
+
+
     public void test(){
         Scanner in = new Scanner(System.in);
         int x = in.nextInt();
@@ -367,10 +311,12 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
 
     }
 
-    // TODO maybe impliment a bitMap
     public boolean isTileOccupied(Cordinates desiredCords){
-
-
+        return bitmap[desiredCords.getX()][desiredCords.getY()];
+    }
+    /*
+    // MUCH SLOWER
+    public boolean isTileOccupied(Cordinates desiredCords,boolean isWhite){
         if(getTile(getTileNumber(desiredCords))
                 .getPiece().getPieceName().equals("empty")) return false;
 
@@ -379,10 +325,7 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
         return true;
     }
 
-    public ArrayList<Tile> getBoardTiles(){
-        return this.boardTiles;
-    }
-
+     */
     public Tile getTile(int i){
         return this.boardTiles.get(i);
     }
@@ -390,12 +333,11 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
     public Tile getTile(Cordinates tileCords){
         return this.boardTiles.get(getTileNumber(tileCords));
     }
-
-
     public int getTileNumber(Cordinates tileCords){
         return ((8 * tileCords.getX()) + tileCords.getY());
     }
 
+    /*
     // TODO Reset somehow your king_state to natural
     //      Maybe move KING_STATE to king.
     public void updateKingsStates(boolean isWhite){
@@ -414,6 +356,7 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
         }
 
         // TODO kai den exei tropo na to stamathsei SOS!!
+        //         after that clean it up and put in a method.
         // An den exei validMoves KAI apileite einai mat.
         if(KING_STATE[0] == 1 && king.getPieceValidMoves().isEmpty()) {
             ArrayList<Cordinates> allyMoves = helpingMoves.getProctiveMoves(king);
@@ -433,6 +376,8 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
         }
     }
 
+     */
+
     public int getKING_STATE(boolean isWhite){
         if(isWhite) return KING_STATE[0];
         else        return KING_STATE[1];
@@ -441,8 +386,6 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
         if(isWhite) return KINGS_CORDS[0];
         else        return KINGS_CORDS[1];
     }
-
-
 
     private void createPieces() {
         this.rook.add(0, new Rook(true, "White Rook", " r", new Cordinates(7, 0),this));
@@ -473,46 +416,55 @@ public class Board extends JFrame implements MouseListener, MouseMotionListener 
 
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
+    // Simple Getters and Setters
+    public void setMovingLabel(JLabel movingLabel) {
+        this.movingLabel = movingLabel;
     }
-    @Override
-    public void mousePressed(MouseEvent e) {
-
+    public void setSourcePanel(JPanel sourcePanel) {
+        this.sourcePanel = sourcePanel;
     }
-    @Override
-    public void mouseReleased(MouseEvent e) {
-
+    public void setOldPanel(JPanel oldPanel) {
+        this.oldPanel = oldPanel;
     }
-    @Override
-    public void mouseEntered(MouseEvent e) {
-
+    public void setThereHighlight(boolean thereHighlight) {
+        isThereHighlight = thereHighlight;
     }
-    @Override
-    public void mouseExited(MouseEvent e) {
-
+    public void setOldClr(Color oldClr) {
+        this.oldClr = oldClr;
     }
-    @Override
-    public void mouseDragged(MouseEvent e) {
-
+    public void setTileClicked(int tileClicked) {
+        this.tileClicked = tileClicked;
     }
-    @Override
-    public void mouseMoved(MouseEvent e) {
-
+    public void setOldTileClicked(int oldTileClicked) {
+        this.oldTileClicked = oldTileClicked;
     }
+    public JLabel getMovingLabel() {
+        return movingLabel;
+    }
+    public JPanel getSourcePanel() {
+        return sourcePanel;
+    }
+    public JPanel getOldPanel() {
+        return oldPanel;
+    }
+    public boolean isThereHighlight() {
+        return isThereHighlight;
+    }
+    public Color getOldClr() {
+        return oldClr;
+    }
+    public int getTileClicked() {
+        return tileClicked;
+    }
+    public int getOldTileClicked() {
+        return oldTileClicked;
+    }
+    public Color getClrForHighlight() {
+        return clrForHighlight;
+    }
+    public ImageIcon getEmptyPieceIcon() {
+        return emptyPieceIcon;
+    }
+
 
 }

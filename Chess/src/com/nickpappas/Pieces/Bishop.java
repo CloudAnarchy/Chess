@@ -43,6 +43,7 @@ public class Bishop extends Piece {
         ArrayList<Cordinates> validMoves = new ArrayList<>();
         Cordinates desiredCords, pieceCords = getPieceCords();
 
+
         // Diagonal movements.
         // Also bishop movement.
         // UpperLeft.
@@ -52,16 +53,15 @@ public class Bishop extends Piece {
             j--;
             desiredCords = new Cordinates(i, j);
 
-            if(desiredCords.getY() == pieceCords.getY() && desiredCords.getX() == pieceCords.getX()) continue;
+            if(!checkStandardVars(pieceCords,desiredCords)) continue;
             // Check if the desiredCords are Occupied then check if the pieces are from the same alliance
             // if they are dont add the cords if they are NOT add the cords but dont add any more in that direction.
             if(getTheBoard().isTileOccupied(desiredCords)){
                 if(!checkAlliances(desiredCords)) {
                     validMoves.add(desiredCords);
                     break;
-                }else{
-                    break;
-                }
+                }else break;
+
             }
             validMoves.add(desiredCords);
 
@@ -77,9 +77,8 @@ public class Bishop extends Piece {
                 if(!checkAlliances(desiredCords)) {
                     validMoves.add(desiredCords);
                     break;
-                }else{
-                    break;
-                }
+                }else break;
+
             }
             validMoves.add(desiredCords);
         }
@@ -94,9 +93,8 @@ public class Bishop extends Piece {
                 if(!checkAlliances(desiredCords)) {
                     validMoves.add(desiredCords);
                     break;
-                }else{
-                    break;
-                }
+                }else break;
+
             }
             validMoves.add(desiredCords);
 
@@ -112,9 +110,8 @@ public class Bishop extends Piece {
                 if(!checkAlliances(desiredCords)) {
                     validMoves.add(desiredCords);
                     break;
-                }else{
-                    break;
-                }
+                }else break;
+
             }
             validMoves.add(desiredCords);
 

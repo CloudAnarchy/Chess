@@ -18,6 +18,7 @@ public class King extends Piece {
     private final ImageIcon whiteKingIcon = new ImageIcon(this.getClass().getResource("Resources/WhitePieces/whiteKing.png"));
     private final ImageIcon blackKingIcon = new ImageIcon(this.getClass().getResource("Resources/BlackPieces/blackKing.png"));
     private boolean KING_MOVED = false;
+    private int KING_STATE = 0;
 
 
     public King(boolean isWhite, String name, String pieceSymbol, Cordinates pieceCords, Board theBoard) {
@@ -50,17 +51,15 @@ public class King extends Piece {
         for(int i = pieceCords.getX()-1;i<=pieceCords.getX()+1;i++){
 
             for(int j = pieceCords.getY()-1;j<=pieceCords.getY()+1;j++){
-                // Dont include the kings position as a move.
-                if(i == pieceCords.getX() && j == pieceCords.getY()) continue;
-                if ( i < 0 || i > 7 || j < 0 || j > 7) continue;
-
                 desiredCords = new Cordinates(i, j);
+
+                if(!checkOutBounds(pieceCords, desiredCords)) continue;
+
                 if(getTheBoard().isTileOccupied(desiredCords))
                     if(checkAlliances(desiredCords)) continue; // An occupied == true kai einai apo to idio Alliance skip.
 
                 // Ama to mporeiRousa == true tote mhn mpeis mesa
                 if(mporeiRoua(desiredCords)) continue;
-
 
                 validMoves.add(desiredCords);
             }
@@ -70,19 +69,13 @@ public class King extends Piece {
         ////////////////////
         //  KING CASLTE  //
         ///////////////////
-
-        // TODO MANY BUGES IN CASTLING
-        //      BLACK KING CAN'T CASTLE
-
-
-        boolean addMove = true;
         if(!KING_MOVED){
+            boolean addMove = true;
             // Castling for the whiteKing
             if(getAlliance()){
                 // Ama den kounh8hke o basilias kane check gia castling
 
-                // Left castling for white King
-
+                // Left castling or white King
                 if(getTheBoard().getTile(56).getPiece().getPieceName().equals("White Rook")){
                     Rook rook = (Rook)getTheBoard().getTile(56).getPiece();
                     if(!rook.didRookMoved()){
@@ -153,14 +146,17 @@ public class King extends Piece {
                         for(int j = 5; j < 7; j++){
                             desiredCords = new Cordinates(0, j);
 
+                            // An occupied == true tote break.
                             if(getTheBoard().isTileOccupied(desiredCords)){
                                 addMove = false;
                                 break;
-                            }    // An occupied == true tote break.
+                            }
+
+                            // Ama to mporeiRousa == true tote mhn mpeis mesa
                             if(mporeiRoua(desiredCords)){
                                 addMove = false;
                                 break;
-                            }                      // Ama to mporeiRousa == true tote mhn mpeis mesa
+                            }
                         }
                         if(addMove) validMoves.add(new Cordinates(0, 6));
                     }
@@ -182,6 +178,7 @@ public class King extends Piece {
                 return true;
         return false;
     }
+
 
 
     @Override
@@ -209,12 +206,32 @@ public class King extends Piece {
         super.pieceCords = newCords;
     }
 
-    /*
-    public boolean didKingMoved(){
-        return KING_MOVED;
-    }
+    // TODO Reset somehow your king_state to natural
+    //      Maybe move KING_STATE to king.
+    public int updateKingState(){
+        PossibleMoves helpingMoves = new PossibleMoves(getTheBoard());
+        ArrayList<Cordinates> enemyCords = helpingMoves.getEnemyMoves(this);
 
-     */
+
+        for(Cordinates enCords : enemyCords){
+            if(this.getPieceCords().getX() == enCords.getX() && this.getPieceCords().getY() == enCords.getY()) {
+                if (this.getAlliance()) KING_STATE = 1;
+                else KING_STATE = 1;
+            }
+        }
+
+        // TODO kai den exei tropo na to stamathsei SOS!!
+        // An den exei validMoves , apileite KAI den uparxei savior einai mat.
+        if(KING_STATE == 1 && this.getPieceValidMoves().isEmpty()) {
+            ArrayList<Cordinates> allyMoves = helpingMoves.getProctiveMoves(this);
+            if(allyMoves.isEmpty()){
+                if(getAlliance()) for(int i=0;i < 40;i++) System.out.println("WHITE LOST");
+                else for(int i=0;i < 40;i++) System.out.println("BLACK LOST");
+                KING_STATE = 2;
+            }
+        }
+        return KING_STATE;
+    }
 
     @Override
     public JLabel getPieceLabel() {
