@@ -1,7 +1,10 @@
 package com.nickpappas;
 
 import com.nickpappas.Pieces.EmptyPiece;
+import com.nickpappas.Pieces.Pawn;
 import com.nickpappas.Pieces.Piece;
+
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 
 public class PossibleMoves {
@@ -19,9 +22,12 @@ public class PossibleMoves {
         ArrayList<Cordinates> enemyMoves = new ArrayList<>();
 
         // Kai gia ta 16 antipala pieces.
+
+
         for(int i = 0; i < 64; i++){
             Piece enemyPiece = theBoard.getTile(i).getPiece();
             if(enemyPiece.getPieceName().equals("empty") ||  piece.getAlliance() == enemyPiece.getAlliance())  continue;  // Mhn checkareis empty kai idio alliance.
+            //if(theBoard.getTile(i).getPiece().equals(piece)) continue; // Mhn checkareis to idio piece
             /*
             for(Cordinates cord : theBoard.getTile(i).getPiece().getPieceValidMoves()){
                 System.out.println(theBoard.getTile(i).getPiece().getPieceName()+"("+theBoard.getTile(i).getPiece().getPieceCords().getX()+","+theBoard.getTile(i).getPiece().getPieceCords().getY()+") - ("+cord.getX()+","+cord.getY()+")");
